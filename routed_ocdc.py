@@ -73,11 +73,35 @@ class RoutedOCDC(CircuitCell):
         down_ht_elec1.reverse()
 
         # Connect them all to the contact pads.
-        conn.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in up_mzi_elec1])
-        conn.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in up_ht_elec1])
-        conn.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in down_mzi_elec1])
-        conn.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in down_ht_elec1])
-        return conn
+        connect = []
+        conn = [("dut:{}".format(p), "bp_{}:m1".format(p)) for p in up_mzi_elec1]
+        mzi_num = int(re.findall(r"\d+", conn[0][1].split(":")[0])[1])
+        for c in conn:
+            if mzi_num != int(re.findall(r"\d+", c[1].split(":")[0])[1]):
+                for e2 in up_mzi_elec2:
+                    if int(re.findall(r"\d+", e2)[1]) == mzi_num:
+                        connect.append(("dut:{}".format(e2), "bp_ug_{}_{}".format(self.dut.get_n_rows(), mzi_num)))
+                mzi_num = int(re.findall(r"\d+", c[1].split(":")[0])[1])
+            connect.append(c)
+
+        connect.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in up_ht_elec1])
+        connect.extend([("dut:{}".format(p), "bp_{}:m1".format("ug_{}_{}".format(self.dut.get_n_rows(), mzi_nums))) for p in up_ht_elec2])
+
+        conn = [("dut:{}".format(p), "bp_{}:m1".format(p)) for p in down_mzi_elec1]
+        mzi_num = int(re.findall(r"\d+", conn[0][1].split(":")[0])[1])
+        for c in conn:
+            if mzi_num != int(re.findall(r"\d+", c[1].split(":")[0])[1]):
+                for e2 in down_mzi_elec2:
+                    if int(re.findall(r"\d+", e2)[1]) == mzi_num:
+                        connect.append(("dut:{}".format(e2), "bp_dg_0_{}".format(mzi_num)))
+                mzi_num = int(re.findall(r"\d+", c[1].split(":")[0])[1])
+            connect.append(c)
+
+        connect.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in down_ht_elec1])
+        connect.extend([("dut:{}".format(p), "bp_{}:m1".format("dg_0_{}".format(mzi_nums))) for p in down_ht_elec2])
+        for c in conn:
+            print(c)
+        return connect
 
     def _default_child_cells(self):
         # The child cells are the DUT, the grating couplers and the contact pads
@@ -109,8 +133,10 @@ class RoutedOCDC(CircuitCell):
         # Place the Bondpads
         for el_link in self.electrical_links:
             bp_name = el_link[1].split(":")[0]
+            #if re.search("")
             row_num = int(re.findall(r"\d+", bp_name)[0])
             if row_num >= self.dut.get_n_rows() / 2:
+                print("u:", bp_name)
                 specs.append(
                     i3.Place(
                         bp_name,
@@ -119,6 +145,7 @@ class RoutedOCDC(CircuitCell):
                 )
                 bp_cnt_u = bp_cnt_u + 1
             else:
+                print("d:", bp_name)
                 specs.append(
                     i3.Place(
                         bp_name,
@@ -155,6 +182,8 @@ class RoutedOCDC(CircuitCell):
                 sp = get_port_from_interface(port_id=el_link[0], inst_dict=insts)  # Start port
                 ep = get_port_from_interface(port_id=el_link[1], inst_dict=insts)  # End port
                 bp_name = el_link[1].split(":")[0]
+                if re.search("ug", bp_name) or re.search("dg", bp_name):
+                    continue
                 if mzi_num != int(re.findall(r"\d+", bp_name)[1]):
                     mzi_num = int(re.findall(r"\d+", bp_name)[1])
                     cnt_x = 0
@@ -184,6 +213,8 @@ class RoutedOCDC(CircuitCell):
                 sp = get_port_from_interface(port_id=el_link[0], inst_dict=insts)  # Start port
                 ep = get_port_from_interface(port_id=el_link[1], inst_dict=insts)  # End port
                 bp_name = el_link[1].split(":")[0]
+                if re.search("ug", bp_name) or re.search("dg", bp_name):
+                    continue
                 if mzi_num != int(re.findall(r"\d+", bp_name)[1]):
                     mzi_num = int(re.findall(r"\d+", bp_name)[1])
                     cnt_x = 0
@@ -202,7 +233,7 @@ class RoutedOCDC(CircuitCell):
                     ep
                 ])
                 #print(bp_name, mzi_num, cnt_x, sp.x - (n_links / 2 - cnt_x) * d)
-                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1, line_width=4.0)
             return elems
 
     class Netlist(CircuitCell.Netlist):
