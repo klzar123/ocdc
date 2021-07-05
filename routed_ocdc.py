@@ -204,7 +204,6 @@ class RoutedOCDC(CircuitCell):
                 if mzi_num != int(re.findall(r"\d+", bp_name)[1]):
                     if not re.search("ht", bp_name):
                         mzi_num = int(re.findall(r"\d+", bp_name)[1])
-                        cnt = cnt - 3
                         cnt_x = 0
                     else:
                         if ht_num == 1:
@@ -265,7 +264,7 @@ class RoutedOCDC(CircuitCell):
                 if mzi_num != int(re.findall(r"\d+", bp_name)[1]):
                     if not re.search("ht", bp_name):
                         mzi_num = int(re.findall(r"\d+", bp_name)[1])
-                        cnt = cnt - 3
+                        #cnt = cnt - 3
                         cnt_x = 0
                     else:
                         if ht_num == 1:
