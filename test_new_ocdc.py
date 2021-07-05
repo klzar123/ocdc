@@ -1,5 +1,3 @@
-
-
 #from mzi_string import MZIString
 #from splittertree import SplitterTree
 from CSiP180Al import all as pdk
@@ -17,8 +15,8 @@ from routed_ocdc import RoutedOCDC
 #print(port_list_out_sorted)
 
 
-ocdc = OCDC(levels=4, mzi_nums=3)
-#ocdc.Layout().visualize(annotate=True)
+ocdc = OCDC(levels=5, mzi_nums=2)
+#ocdc.Layout().visualize(annotate=False)
 #ocdc_lv = ocdc.get_default_view(i3.LayoutView)
 #ocdc_port_list = [p.name for p in ocdc_lv.ports if re.search("elec", p.name)]
 #for port in ocdc_port_list:
@@ -26,6 +24,7 @@ ocdc = OCDC(levels=4, mzi_nums=3)
 
 r_ocdc = RoutedOCDC(dut=ocdc)
 r_ocdc.Layout().visualize(annotate=False)
+r_ocdc.Layout().write_gdsii('OCDC.gds')
 
 #split = pdk.M2X2_TE_1550()
 #split.Layout().visualize(annotate=True)

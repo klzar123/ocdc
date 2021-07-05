@@ -14,12 +14,24 @@ def take_mzi_num(p):
 def take_mzis_mzi_num(p):
     return (int(re.findall(r"\d+", p)[1]), -int(re.findall(r"\d+", p)[0]), -int(re.findall(r"\d+", p)[2]))
 
+def take_mzis_mzi_num2(p):
+    return (int(re.findall(r"\d+", p)[1]), int(re.findall(r"\d+", p)[0]), int(re.findall(r"\d+", p)[2]))
+
+
+def merge_connector(ELEC1, ELEC2):
+    conn = []
+    for i in range(len(ELEC1)):
+        elec1 = ELEC1[i]
+        elec2 = ELEC2[i]
+        conn.append(("dut:{}".format(elec1), "bp_{}:m1".format(elec1)))
+        conn.append(("dut:{}".format(elec2), "bp_{}:m1".format(elec2)))
+    return conn
 
 class RoutedOCDC(CircuitCell):
     _name_prefix = "Routed_OCDC"
     dut = i3.ChildCellProperty(doc="OCDC")
     electrical_links = i3.LockedProperty(doc="The electrical connectors between the heaters and the contact pads")
-    bond_pads_spacing = i3.PositiveNumberProperty(default=100.0, doc="The horizontal distance between the contact pads")
+    bond_pads_spacing = i3.PositiveNumberProperty(default=50.0, doc="The horizontal distance between the contact pads")
     wire_spacing = i3.PositiveNumberProperty(default=10.0, doc="The spacing between the electrical wires")
 
     def _default_dut(self):
@@ -56,9 +68,9 @@ class RoutedOCDC(CircuitCell):
                     else:
                         down_mzi_elec2.append(p.name)
 
-        up_mzi_elec1.sort(key=take_mzi_num)
+        up_mzi_elec1.sort(key=take_mzis_mzi_num2)
         down_mzi_elec1.sort(key=take_mzis_mzi_num)
-        up_mzi_elec2.sort(key=take_mzi_num)
+        up_mzi_elec2.sort(key=take_mzis_mzi_num2)
         down_mzi_elec2.sort(key=take_mzis_mzi_num)
 
         # heater
@@ -66,42 +78,21 @@ class RoutedOCDC(CircuitCell):
                     re.search("(ht)", p.name) and re.search("(elec1)", p.name)]
         ht_elec2 = [p.name for p in dut_lv.ports.y_sorted() if
                     re.search("(ht)", p.name) and re.search("(elec2)", p.name)]
-        down_ht_elec1 = ht_elec1[:len(ht_elec1) / 2]
         up_ht_elec1 = ht_elec1[len(ht_elec1) / 2:]
-        up_ht_elec2 = ht_elec1[:len(ht_elec2) / 2]
-        down_ht_elec2 = ht_elec1[len(ht_elec2) / 2:]
+        up_ht_elec2 = ht_elec2[len(ht_elec2) / 2:]
+
+        down_ht_elec1 = ht_elec1[:len(ht_elec1) / 2]
+        down_ht_elec2 = ht_elec2[:len(ht_elec2) / 2]
         down_ht_elec1.reverse()
+        down_ht_elec2.reverse()
 
         # Connect them all to the contact pads.
-        connect = []
-        conn = [("dut:{}".format(p), "bp_{}:m1".format(p)) for p in up_mzi_elec1]
-        mzi_num = int(re.findall(r"\d+", conn[0][1].split(":")[0])[1])
-        for c in conn:
-            if mzi_num != int(re.findall(r"\d+", c[1].split(":")[0])[1]):
-                for e2 in up_mzi_elec2:
-                    if int(re.findall(r"\d+", e2)[1]) == mzi_num:
-                        connect.append(("dut:{}".format(e2), "bp_ug_{}_{}".format(self.dut.get_n_rows(), mzi_num)))
-                mzi_num = int(re.findall(r"\d+", c[1].split(":")[0])[1])
-            connect.append(c)
+        conn.extend(merge_connector(up_mzi_elec1, up_mzi_elec2))
+        conn.extend(merge_connector(up_ht_elec1, up_ht_elec2))
+        conn.extend(merge_connector(down_mzi_elec1, down_mzi_elec2))
+        conn.extend(merge_connector(down_ht_elec1,down_ht_elec2))
 
-        connect.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in up_ht_elec1])
-        connect.extend([("dut:{}".format(p), "bp_{}:m1".format("ug_{}_{}".format(self.dut.get_n_rows(), mzi_nums))) for p in up_ht_elec2])
-
-        conn = [("dut:{}".format(p), "bp_{}:m1".format(p)) for p in down_mzi_elec1]
-        mzi_num = int(re.findall(r"\d+", conn[0][1].split(":")[0])[1])
-        for c in conn:
-            if mzi_num != int(re.findall(r"\d+", c[1].split(":")[0])[1]):
-                for e2 in down_mzi_elec2:
-                    if int(re.findall(r"\d+", e2)[1]) == mzi_num:
-                        connect.append(("dut:{}".format(e2), "bp_dg_0_{}".format(mzi_num)))
-                mzi_num = int(re.findall(r"\d+", c[1].split(":")[0])[1])
-            connect.append(c)
-
-        connect.extend([("dut:{}".format(p), "bp_{}:m1".format(p)) for p in down_ht_elec1])
-        connect.extend([("dut:{}".format(p), "bp_{}:m1".format("dg_0_{}".format(mzi_nums))) for p in down_ht_elec2])
-        for c in conn:
-            print(c)
-        return connect
+        return conn
 
     def _default_child_cells(self):
         # The child cells are the DUT, the grating couplers and the contact pads
@@ -116,42 +107,60 @@ class RoutedOCDC(CircuitCell):
 
     def _default_place_specs(self):
         specs = []
+
         # Define the positions of the ports.
         bp_cnt_u = 0
         bp_cnt_d = 0
         bp_spacing = self.bond_pads_spacing
-        height = self.dut.get_default_view(i3.LayoutView).size_info().north
+        height = - self.dut.get_default_view(i3.LayoutView).size_info().north / 2
 
         # Place the dut (splitter tree) at the origin
         specs.append(i3.Place("dut", (0, 0)))
+
         # Place the optical connectors
         specs.append(i3.Place("gr_in", (-100, 0)))
-        # specs.append(i3.PlaceRelative("gr_out", "dut", (300, 0), angle=180.0))
         specs.append(i3.Place("gr_out", (self.dut.get_default_view(i3.LayoutView).size_info().east + 100, 0)))
         specs.append(i3.FlipH("gr_out"))
 
         # Place the Bondpads
         for el_link in self.electrical_links:
             bp_name = el_link[1].split(":")[0]
-            #if re.search("")
             row_num = int(re.findall(r"\d+", bp_name)[0])
             if row_num >= self.dut.get_n_rows() / 2:
-                print("u:", bp_name)
-                specs.append(
-                    i3.Place(
-                        bp_name,
-                        (bp_cnt_u * bp_spacing, height + bp_spacing + len(self.electrical_links) * self.wire_spacing)
+                if re.search("elec1", bp_name):
+                    specs.append(
+                        i3.Place(
+                            bp_name,
+                            (bp_cnt_u * bp_spacing,
+                             height + bp_spacing + len(self.electrical_links) * self.wire_spacing)
+                        )
                     )
-                )
+                else:
+                    specs.append(
+                        i3.Place(
+                            bp_name,
+                            (bp_cnt_u * bp_spacing - 3.5 * bp_spacing / 2,
+                             height + bp_spacing + len(self.electrical_links) * self.wire_spacing + 127)
+                        )
+                    )
                 bp_cnt_u = bp_cnt_u + 1
             else:
-                print("d:", bp_name)
-                specs.append(
-                    i3.Place(
-                        bp_name,
-                        (bp_cnt_d * bp_spacing, -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing))
+                if re.search("elec1", bp_name):
+                    specs.append(
+                        i3.Place(
+                            bp_name,
+                            (bp_cnt_d * bp_spacing,
+                             -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing))
+                        )
                     )
-                )
+                else:
+                    specs.append(
+                        i3.Place(
+                            bp_name,
+                            (bp_cnt_d * bp_spacing - 3.5 * bp_spacing / 2,
+                             -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing + 127))
+                        )
+                    )
                 bp_cnt_d = bp_cnt_d + 1
         return specs
 
@@ -176,64 +185,196 @@ class RoutedOCDC(CircuitCell):
             cnt = 0
             cnt_x = 0
             n_links = len(up_link)
+            problem_route = []
             # Loop over each electrical link to provide the route for them
             mzi_num = 0
+            last_sp = None
+            last_ep = None
+            ht_num = 0
+            dy = -500
             for el_link in up_link:
                 sp = get_port_from_interface(port_id=el_link[0], inst_dict=insts)  # Start port
                 ep = get_port_from_interface(port_id=el_link[1], inst_dict=insts)  # End port
                 bp_name = el_link[1].split(":")[0]
-                if re.search("ug", bp_name) or re.search("dg", bp_name):
-                    continue
+                if re.search("ht", bp_name):
+                    mzi_num = -1
+                    ht_num = ht_num + 1
                 if mzi_num != int(re.findall(r"\d+", bp_name)[1]):
-                    mzi_num = int(re.findall(r"\d+", bp_name)[1])
-                    cnt_x = 0
-                dy = -200
+                    if not re.search("ht", bp_name):
+                        mzi_num = int(re.findall(r"\d+", bp_name)[1])
+                        cnt = cnt - 3
+                        cnt_x = 0
+                    else:
+                        if ht_num == 1:
+                            cnt_x = 7
                 d = self.wire_spacing
                 cnt_x = cnt_x + 1
-                if sp.x > ep.x:
+                if sp.x - (n_links / 2 - cnt_x) * d > ep.x:
                     cnt = cnt + 1
                 else:
                     cnt = cnt - 1
-                shape = i3.Shape([
-                    sp,
-                    (sp.x - (n_links / 2 - cnt_x) * d, sp.y),
-                    (sp.x - (n_links / 2 - cnt_x) * d, ep.y - self.bond_pads_spacing + cnt * d + dy),
-                    (ep.x, ep.y - self.bond_pads_spacing + cnt * d + dy),
-                    ep
-                ])
+                print(bp_name, cnt)
+                shape = None
+                if re.search("elec1", bp_name):
+                    shape = i3.Shape([
+                        sp,
+                        (sp.x - (n_links / 2 - cnt_x) * d, sp.y),
+                        (sp.x - (n_links / 2 - cnt_x) * d, ep.y - self.bond_pads_spacing + cnt * d + dy),
+                        (ep.x, ep.y - self.bond_pads_spacing + cnt * d + dy),
+                        ep
+                    ])
+                    last_sp = sp
+                    last_ep = ep
+                    """
+                    if sp.x > ep.x and sp.x - (n_links / 2 - cnt_x) * d < ep.x:
+                        problem_route.append((bp_name, sp, ep, cnt_x, cnt, last_sp, last_ep))
+                        continue
+                    else:
+                        elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                        if len(problem_route) != 0:
+                            delta_cnt = len(problem_route)
+                            for bp_name_t, sp_t, ep_t, cnt_x_t, cnt_t, last_sp_t, last_ep_t in problem_route:
+                                if re.search("elec2",  bp_name_t):
+                                    cnt_t = cnt_t + 2
+                                    shape = i3.Shape([
+                                        sp_t,
+                                        (sp_t.x, sp_t.y - d),
+                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d, sp_t.y - d),
+                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d,
+                                         last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        (ep_t.x, last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        ep_t
+                                    ])
+                                else:
+                                    shape = i3.Shape([
+                                        sp_t,
+                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d, sp_t.y),
+                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d, ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        (ep_t.x, ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        ep_t
+                                    ])
+                                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                                delta_cnt = delta_cnt + 1
+                            problem_route = []
+                        continue
+                    """
+                else:
+                    tmp_cnt = None
+                    if last_sp.x < last_ep.x and sp.x > ep.x:
+                        cnt = cnt - 2
+                        tmp_cnt = cnt + 2
+                    else:
+                        if sp.x - (n_links / 2 - cnt_x) * d > ep.x:
+                            tmp_cnt = cnt - 2
+                        else:
+                            tmp_cnt = cnt + 2
+                    shape = i3.Shape([
+                        sp,
+                        (sp.x, sp.y - d),
+                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d, sp.y - d),
+                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 *d, last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
+                        (ep.x, last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
+                        ep
+                    ])
+
+                    """
+                    if sp.x > ep.x and last_sp.x - (n_links / 2 - cnt_x) * d - 2 *d < ep.x:
+                        problem_route.append((bp_name, sp, ep, cnt_x, tmp_cnt, last_sp, last_ep))
+                        continue
+                    else:
+                        elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                        if len(problem_route) != 0:
+                            #delta_cnt = len(problem_route)
+                            delta_cnt = 0
+                            for bp_name_t, sp_t, ep_t, cnt_x_t, cnt_t, last_sp_t, last_ep_t in problem_route:
+                                if re.search("elec2", bp_name_t):
+                                    shape = i3.Shape([
+                                        sp_t,
+                                        (sp_t.x, sp_t.y - d),
+                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d, sp_t.y - d),
+                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d,
+                                         last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        (ep_t.x, last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        ep_t
+                                    ])
+                                else:
+                                    shape = i3.Shape([
+                                        sp_t,
+                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d, sp_t.y),
+                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d,
+                                         ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        (ep_t.x, ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
+                                        ep_t
+                                    ])
+                                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                                #delta_cnt = delta_cnt + 1
+                            problem_route = []
+                        continue
+                    """
+
                 elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
 
             # down links
+            ht_num = 0
             n_links = len(down_link)
             cnt = 0
             cnt_x = 0
             mzi_num = 0
+            dy = -dy
             # Loop over each electrical link to provide the route for them
             for el_link in down_link:
                 sp = get_port_from_interface(port_id=el_link[0], inst_dict=insts)  # Start port
                 ep = get_port_from_interface(port_id=el_link[1], inst_dict=insts)  # End port
                 bp_name = el_link[1].split(":")[0]
-                if re.search("ug", bp_name) or re.search("dg", bp_name):
-                    continue
+                if re.search("ht", bp_name):
+                    mzi_num = -1
+                    ht_num = ht_num + 1
                 if mzi_num != int(re.findall(r"\d+", bp_name)[1]):
-                    mzi_num = int(re.findall(r"\d+", bp_name)[1])
-                    cnt_x = 0
-                dy = 200
+                    if not re.search("ht", bp_name):
+                        mzi_num = int(re.findall(r"\d+", bp_name)[1])
+                        cnt = cnt - 3
+                        cnt_x = 0
+                    else:
+                        if ht_num == 1:
+                            cnt_x = 7
                 d = self.wire_spacing
                 cnt_x = cnt_x + 1
                 if sp.x > ep.x:
                     cnt = cnt + 1
                 else:
                     cnt = cnt - 1
-                shape = i3.Shape([
-                    sp,
-                    (sp.x - (n_links / 2 - cnt_x) * d, sp.y),
-                    (sp.x - (n_links / 2 - cnt_x) * d, ep.y + self.bond_pads_spacing - cnt * d + dy),
-                    (ep.x, ep.y + self.bond_pads_spacing - cnt * d + dy),
-                    ep
-                ])
+                shape = None
+                if re.search("elec1", bp_name):
+                    shape = i3.Shape([
+                        sp,
+                        (sp.x - (n_links / 2 - cnt_x) * d, sp.y),
+                        (sp.x - (n_links / 2 - cnt_x) * d, ep.y + self.bond_pads_spacing - cnt * d + dy),
+                        (ep.x, ep.y + self.bond_pads_spacing - cnt * d + dy),
+                        ep
+                    ])
+                    last_sp = sp
+                    last_ep = ep
+                else:
+                    tmp_cnt = None
+                    if last_sp.x < last_ep.x and sp.x > ep.x:
+                        cnt = cnt - 2
+                        tmp_cnt = cnt + 2
+                    else:
+                        if sp.x > ep.x:
+                            tmp_cnt = cnt - 2
+                        else:
+                            tmp_cnt = cnt + 2
+                    shape = i3.Shape([
+                        sp,
+                        (sp.x, sp.y + d),
+                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d, sp.y + d),
+                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d, last_ep.y + self.bond_pads_spacing - tmp_cnt * d + dy),
+                        (ep.x, last_ep.y + self.bond_pads_spacing - tmp_cnt * d + dy),
+                        ep
+                    ])
                 #print(bp_name, mzi_num, cnt_x, sp.x - (n_links / 2 - cnt_x) * d)
-                elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1, line_width=4.0)
+                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                #elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1, line_width=4.0)
             return elems
 
     class Netlist(CircuitCell.Netlist):
@@ -245,5 +386,4 @@ class RoutedOCDC(CircuitCell):
                 netlist += i3.ElectricalTerm(name=term_name)  # Adding an output term
                 del (netlist.instances["bp_{}".format(term_name)])  # Deleting the bondpads from the netlist
                 netlist.link("dut:{}".format(term_name), term_name)  # Linking the dut to the bondpads
-
             return netlist

@@ -8,13 +8,13 @@ class MZIString(CircuitCell):
     _name_prefix = "MZI_String"
     mzi = i3.ChildCellProperty(doc="MZI")
     mzi_nums = i3.IntProperty(default=2, doc="Number of MZIs")
-    spacing = i3.PositiveNumberProperty(default=500, doc="spacing between MZIs")
+    spacing = i3.PositiveNumberProperty(default=800, doc="spacing between MZIs")
     # maybe useless, how to connect directly?
     bend_radius = i3.PositiveNumberProperty(default=5.0, doc="Bend radius of the connecting waveguides")
 
     def _default_mzi(self):
         split = pdk.M2X2_TE_1550()
-        ht = HeatedWaveguide(heater_width=5,
+        ht = HeatedWaveguide(heater_width=4,
                              heater_offset=3.0,
                              m1_width=10.0,
                              m1_length=50.0)
