@@ -14,6 +14,7 @@ def take_mzi_num(p):
 def take_mzis_mzi_num(p):
     return (int(re.findall(r"\d+", p)[1]), -int(re.findall(r"\d+", p)[0]), -int(re.findall(r"\d+", p)[2]))
 
+
 def take_mzis_mzi_num2(p):
     return (int(re.findall(r"\d+", p)[1]), int(re.findall(r"\d+", p)[0]), int(re.findall(r"\d+", p)[2]))
 
@@ -26,6 +27,7 @@ def merge_connector(ELEC1, ELEC2):
         conn.append(("dut:{}".format(elec1), "bp_{}:m1".format(elec1)))
         conn.append(("dut:{}".format(elec2), "bp_{}:m1".format(elec2)))
     return conn
+
 
 class RoutedOCDC(CircuitCell):
     _name_prefix = "Routed_OCDC"
@@ -90,7 +92,7 @@ class RoutedOCDC(CircuitCell):
         conn.extend(merge_connector(up_mzi_elec1, up_mzi_elec2))
         conn.extend(merge_connector(up_ht_elec1, up_ht_elec2))
         conn.extend(merge_connector(down_mzi_elec1, down_mzi_elec2))
-        conn.extend(merge_connector(down_ht_elec1,down_ht_elec2))
+        conn.extend(merge_connector(down_ht_elec1, down_ht_elec2))
 
         return conn
 
@@ -206,16 +208,17 @@ class RoutedOCDC(CircuitCell):
                         cnt_x = 0
                     else:
                         if ht_num == 1:
-                            cnt_x = 7
+                            cnt_x = 0
                 d = self.wire_spacing
                 cnt_x = cnt_x + 1
-                if sp.x - (n_links / 2 - cnt_x) * d > ep.x:
-                    cnt = cnt + 1
-                else:
-                    cnt = cnt - 1
+
                 print(bp_name, cnt)
                 shape = None
                 if re.search("elec1", bp_name):
+                    if sp.x - (n_links / 2 - cnt_x) * d > ep.x:
+                        cnt = cnt + 1
+                    else:
+                        cnt = cnt - 1
                     shape = i3.Shape([
                         sp,
                         (sp.x - (n_links / 2 - cnt_x) * d, sp.y),
@@ -225,93 +228,23 @@ class RoutedOCDC(CircuitCell):
                     ])
                     last_sp = sp
                     last_ep = ep
-                    """
-                    if sp.x > ep.x and sp.x - (n_links / 2 - cnt_x) * d < ep.x:
-                        problem_route.append((bp_name, sp, ep, cnt_x, cnt, last_sp, last_ep))
-                        continue
-                    else:
-                        elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                        if len(problem_route) != 0:
-                            delta_cnt = len(problem_route)
-                            for bp_name_t, sp_t, ep_t, cnt_x_t, cnt_t, last_sp_t, last_ep_t in problem_route:
-                                if re.search("elec2",  bp_name_t):
-                                    cnt_t = cnt_t + 2
-                                    shape = i3.Shape([
-                                        sp_t,
-                                        (sp_t.x, sp_t.y - d),
-                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d, sp_t.y - d),
-                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d,
-                                         last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        (ep_t.x, last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        ep_t
-                                    ])
-                                else:
-                                    shape = i3.Shape([
-                                        sp_t,
-                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d, sp_t.y),
-                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d, ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        (ep_t.x, ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        ep_t
-                                    ])
-                                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                                delta_cnt = delta_cnt + 1
-                            problem_route = []
-                        continue
-                    """
                 else:
                     tmp_cnt = None
-                    if last_sp.x < last_ep.x and sp.x > ep.x:
-                        cnt = cnt - 2
-                        tmp_cnt = cnt + 2
+                    if last_sp.x - (n_links / 2 - (cnt_x - 1)) * d - 2 * d > last_ep.x:
+                        cnt = cnt + 1
+                        tmp_cnt = cnt - 2
                     else:
-                        if sp.x - (n_links / 2 - cnt_x) * d > ep.x:
-                            tmp_cnt = cnt - 2
-                        else:
-                            tmp_cnt = cnt + 2
+                        cnt = cnt - 1
+                        tmp_cnt = cnt + 2
                     shape = i3.Shape([
                         sp,
                         (sp.x, sp.y - d),
                         (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d, sp.y - d),
-                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 *d, last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
+                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d,
+                         last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
                         (ep.x, last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
                         ep
                     ])
-
-                    """
-                    if sp.x > ep.x and last_sp.x - (n_links / 2 - cnt_x) * d - 2 *d < ep.x:
-                        problem_route.append((bp_name, sp, ep, cnt_x, tmp_cnt, last_sp, last_ep))
-                        continue
-                    else:
-                        elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                        if len(problem_route) != 0:
-                            #delta_cnt = len(problem_route)
-                            delta_cnt = 0
-                            for bp_name_t, sp_t, ep_t, cnt_x_t, cnt_t, last_sp_t, last_ep_t in problem_route:
-                                if re.search("elec2", bp_name_t):
-                                    shape = i3.Shape([
-                                        sp_t,
-                                        (sp_t.x, sp_t.y - d),
-                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d, sp_t.y - d),
-                                        (last_sp_t.x - (n_links / 2 - cnt_x_t) * d - 2 * d,
-                                         last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        (ep_t.x, last_ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        ep_t
-                                    ])
-                                else:
-                                    shape = i3.Shape([
-                                        sp_t,
-                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d, sp_t.y),
-                                        (sp_t.x - (n_links / 2 - cnt_x_t) * d,
-                                         ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        (ep_t.x, ep_t.y - self.bond_pads_spacing + (cnt_t + delta_cnt) * d + dy),
-                                        ep_t
-                                    ])
-                                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                                #delta_cnt = delta_cnt + 1
-                            problem_route = []
-                        continue
-                    """
-
                 elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
 
             # down links
@@ -336,15 +269,15 @@ class RoutedOCDC(CircuitCell):
                         cnt_x = 0
                     else:
                         if ht_num == 1:
-                            cnt_x = 7
+                            cnt_x = 3
                 d = self.wire_spacing
                 cnt_x = cnt_x + 1
-                if sp.x > ep.x:
-                    cnt = cnt + 1
-                else:
-                    cnt = cnt - 1
                 shape = None
                 if re.search("elec1", bp_name):
+                    if sp.x - (n_links / 2 - cnt_x) * d > ep.x:
+                        cnt = cnt + 1
+                    else:
+                        cnt = cnt - 1
                     shape = i3.Shape([
                         sp,
                         (sp.x - (n_links / 2 - cnt_x) * d, sp.y),
@@ -356,25 +289,24 @@ class RoutedOCDC(CircuitCell):
                     last_ep = ep
                 else:
                     tmp_cnt = None
-                    if last_sp.x < last_ep.x and sp.x > ep.x:
-                        cnt = cnt - 2
-                        tmp_cnt = cnt + 2
+                    if last_sp.x - (n_links / 2 - (cnt_x - 1)) * d - 2 * d > last_ep.x:
+                        cnt = cnt + 1
+                        tmp_cnt = cnt - 2
                     else:
-                        if sp.x > ep.x:
-                            tmp_cnt = cnt - 2
-                        else:
-                            tmp_cnt = cnt + 2
+                        cnt = cnt - 1
+                        tmp_cnt = cnt + 2
                     shape = i3.Shape([
                         sp,
                         (sp.x, sp.y + d),
                         (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d, sp.y + d),
-                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d, last_ep.y + self.bond_pads_spacing - tmp_cnt * d + dy),
+                        (last_sp.x - (n_links / 2 - cnt_x) * d - 2 * d,
+                         last_ep.y + self.bond_pads_spacing - tmp_cnt * d + dy),
                         (ep.x, last_ep.y + self.bond_pads_spacing - tmp_cnt * d + dy),
                         ep
                     ])
-                #print(bp_name, mzi_num, cnt_x, sp.x - (n_links / 2 - cnt_x) * d)
+                # print(bp_name, mzi_num, cnt_x, sp.x - (n_links / 2 - cnt_x) * d)
                 elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                #elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1, line_width=4.0)
+                # elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1, line_width=4.0)
             return elems
 
     class Netlist(CircuitCell.Netlist):
