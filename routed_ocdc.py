@@ -5,7 +5,8 @@ from CSiP180Al import all as pdk
 from ocdc import OCDC
 from bond_pad import BondPad
 import re
-
+#from ipkiss.technology import get_technology
+#TECH = get_technology()
 
 def take_mzi_num(p):
     return int(re.findall(r"\d+", p)[1])
@@ -244,7 +245,7 @@ class RoutedOCDC(CircuitCell):
                         (ep.x, last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
                         ep
                     ])
-                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1.DRW, line_width=4.0)
 
             # down links
             ht_num = 0
@@ -304,8 +305,8 @@ class RoutedOCDC(CircuitCell):
                         ep
                     ])
                 # print(bp_name, mzi_num, cnt_x, sp.x - (n_links / 2 - cnt_x) * d)
-                elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                # elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1, line_width=4.0)
+                #elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1.DRW, line_width=4.0)
             return elems
 
     class Netlist(CircuitCell.Netlist):
