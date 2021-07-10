@@ -1,9 +1,9 @@
 #from mzi_string import MZIString
 #from splittertree import SplitterTree
 from CSiP180Al import all as pdk
-#from picazzo3.filters.mzi import MZIWithCells
-#from heatedwaveguide import HeatedWaveguide
-#from ipkiss3 import all as i3
+from picazzo3.filters.mzi import MZIWithCells
+from heatedwaveguide import HeatedWaveguide
+from ipkiss3 import all as i3
 #import re
 from ocdc import OCDC
 from routed_ocdc import RoutedOCDC
@@ -15,22 +15,20 @@ from routed_ocdc import RoutedOCDC
 #print(port_list_out_sorted)
 
 
-ocdc = OCDC(levels=5, mzi_nums=2)
-#ocdc.Layout().visualize(annotate=False)
+ocdc = OCDC(levels=4, mzi_nums=2)
+ocdc.Layout().visualize(annotate=False)
 #ocdc_lv = ocdc.get_default_view(i3.LayoutView)
 #ocdc_port_list = [p.name for p in ocdc_lv.ports if re.search("elec", p.name)]
 #for port in ocdc_port_list:
 #    print port
 
-r_ocdc = RoutedOCDC(dut=ocdc)
-r_ocdc.Layout().visualize(annotate=False)
-r_ocdc.Layout().write_gdsii('OCDC.gds')
-
-#split = pdk.M2X2_TE_1550()
-#split.Layout().visualize(annotate=True)
-
+#r_ocdc = RoutedOCDC(dut=ocdc)
+#r_ocdc.Layout().visualize(annotate=False)
+#r_ocdc.Layout().write_gdsii('OCDC.gds')
 """
 split = pdk.M2X2_TE_1550()
+#split.Layout().visualize(annotate=True)
+
 ht = HeatedWaveguide(heater_width=5,
                      heater_offset=3.0,
                      m1_width=10.0,
@@ -42,12 +40,13 @@ mzi=MZIWithCells(name="my_mzi_cells_1",
     arm1_contents_port_names=["in", "out"],
     arm2_contents=ht,
     arm2_contents_port_names=["in", "out"],)
-dut_lv=mzi.get_default_view(i3.LayoutView)
-port_list_out_sorted = [p.name for p in dut_lv.ports.y_sorted()]
-print(port_list_out_sorted)
+mzi.Layout().visualize(annotate=True)
+#dut_lv=mzi.get_default_view(i3.LayoutView)
+#port_list_out_sorted = [p.name for p in dut_lv.ports.y_sorted()]
+#print(port_list_out_sorted)
 """
 
-""""
+"""
 from technologies import silicon_photonics
 from picazzo3.filters.mzi import MZIWithCells
 from picazzo3.wg.dircoup import BendDirectionalCoupler

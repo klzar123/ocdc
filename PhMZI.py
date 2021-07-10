@@ -28,12 +28,21 @@ class PhMZI(CircuitCell):
         return [("mzi:combiner_out1", "ht:in", bezier_sbend, {"bend_radius": 5.0})]
 
     def _default_place_specs(self):
-        return [i3.Place("mzi", (0, 0)), i3.Place("ht", (500, 10))]
+        return [i3.Place("mzi", (0, 0)), i3.Place("ht",
+                                                  (self.child_cells["mzi"].get_default_view(i3.LayoutView).size_info().east + 100,
+                                                   10))]
 
     def _default_external_port_names(self):
         return {"mzi:splitter_in1":"in1",
                 "mzi:splitter_in2":"in2",
                 "ht:out":"out1",
-                "mzi:combiner_out2":"out2"}
+                "mzi:combiner_out2":"out2",
+                "mzi:arm2_elec1":"mzi_arm2_elec1",
+                "mzi:arm2_elec2":"mzi_arm2_elec2",
+                "ht:elec1":"ht_elec1",
+                "ht:elec2":"ht_elec2"}
+
+    def _default_propagated_electrical_ports(self):
+        return ["mzi_arm2_elec1", "mzi_arm2_elec2", "ht_elec1", "ht_elec2"]
 
 

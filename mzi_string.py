@@ -10,7 +10,7 @@ class MZIString(CircuitCell):
     mzi_nums = i3.IntProperty(default=2, doc="Number of MZIs")
     spacing = i3.PositiveNumberProperty(default=800, doc="spacing between MZIs")
     # maybe useless, how to connect directly?
-    bend_radius = i3.PositiveNumberProperty(default=5.0, doc="Bend radius of the connecting waveguides")
+    bend_radius = i3.PositiveNumberProperty(default=30.0, doc="Bend radius of the connecting waveguides")
 
     def _default_mzi(self):
         split = pdk.M2X2_TE_1550()
@@ -25,7 +25,6 @@ class MZIString(CircuitCell):
                    arm1_contents_port_names=["in", "out"],
                    arm2_contents=ht,
                    arm2_contents_port_names=["in", "out"],)
-
 
     def _default_child_cells(self):
         child_cells = dict()

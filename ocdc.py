@@ -11,19 +11,22 @@ class OCDC(CircuitCell):
     splitter_tree = i3.ChildCellProperty(doc="SplitterTree used")
     levels = i3.IntProperty(default=3, doc="Number of levels")
     spacing_x = i3.PositiveNumberProperty(default=220.0, doc="Horizontal spacing between the levels")
-    spacing_y = i3.PositiveNumberProperty(default=50.0, doc="Vertical spacing between the MMIs in the last level")
+    spacing_y = i3.PositiveNumberProperty(default=80.0, doc="Vertical spacing between the MMIs in the last level")
     bend_radius = i3.PositiveNumberProperty(default=5.0, doc="Bend radius of the connecting waveguides")
 
     # MZI options
     mzi_string = i3.ChildCellProperty(doc="MZI used")
     mzi_nums = i3.IntProperty(default=3, doc="Number of MZIs")
-    mzi_spacing = i3.PositiveNumberProperty(default=600, doc="Spacing between MZIs")
+    mzi_spacing = i3.PositiveNumberProperty(default=750, doc="Spacing between MZIs")
 
     # Heater
     heated_wg = i3.ChildCellProperty(doc="Heated Waveguide")
 
     def get_n_rows(self):
         return 2 ** (self.levels - 1)
+
+    def get_levels(self):
+        return self.levels
 
     def get_mzi_nums(self):
         return self.mzi_nums
@@ -42,8 +45,10 @@ class OCDC(CircuitCell):
     def _default_heated_wg(self):
         return HeatedWaveguide(heater_width=5,
                              heater_offset=3.0,
+                             heater_length=400,
                              m1_width=10.0,
                              m1_length=50.0)
+
     def _default_child_cells(self):
         child_cells = dict()
         child_cells["splitter"] = self.splitter_tree
@@ -88,8 +93,8 @@ class OCDC(CircuitCell):
         # place the mzi_string
         mzi_string_nums = 2 ** (self.levels - 1) - 1
         y_0 = - 0.5 * self.spacing_y * 2 ** (self.levels - 1)
-        x_coord = splitter_len
-        ht_x_coord = splitter_len + mzi_string_len + self.spacing_x / 2
+        x_coord = splitter_len - 150
+        ht_x_coord = splitter_len + mzi_string_len - 50
         for i in range(mzi_string_nums):
             y_coord = y_0 + (i + 0.5) * self.spacing_y
             place_specs.append(i3.Place("mzis_{}".format(i),

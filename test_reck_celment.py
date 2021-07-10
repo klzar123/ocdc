@@ -16,5 +16,5 @@ from PhMZI import PhMZI
 #phmzi = PhMZI()
 #phmzi.Layout().visualize(annotate=True)
 
-cel = Celment(dim=6)
-cel.Layout().visualize()
+cel = Celment(dim=5)
+cel.Layout().visualize(annotate=True)
