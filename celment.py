@@ -246,8 +246,16 @@ class Celment(CircuitCell):
                         conn.append(
                             ("block_{}_{}:out2".format(i, j), "block_{}_{}:in1".format(i - 1, j + offset), bezier_sbend,
                             {"bend_radius": self.bend_radius}))
-
         return conn
+
+    def _default_external_port_names(self):
+        epn = dict()
+        for i in range(self.dim):
+            epn["gr_in_{}:vertical_io".format(i)] = "in{}".format(i + 1)
+            epn["gr_out_{}:vertical_io".format(i)] = "out{}".format(i + 1)
+        return epn
+
+
 
 
 
