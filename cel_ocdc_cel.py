@@ -4,7 +4,7 @@ from circuit.all import CircuitCell, bezier_sbend, manhattan
 from bond_pad import BondPad
 import re
 from time import time
-from functools import wraps
+from functools import wraps, partial
 
 from ocdc import OCDC
 from celment import Celment
@@ -46,6 +46,8 @@ class CelOCDCCel(CircuitCell):
             child_cells["ocdc_{}".format(i)] = self.ocdc_block
             child_cells["gr_in_{}".format(i)] = pdk.GC_TE_1550()
             child_cells["gr_out_{}".format(i)] = pdk.GC_TE_1550()
+
+
         return child_cells
 
     @timethis
@@ -85,18 +87,35 @@ class CelOCDCCel(CircuitCell):
         place_specs.append(i3.FlipV("cel_out"))
 
         return place_specs
-"""
+
     @timethis
     def _default_connectors(self):
         conn = []
+        cel_spy = self.celment_block.get_spacing_y()
+        cel_spx = self.celment_block.get_spacing_x()
+        celment_len = self.celment_block.get_default_view(i3.LayoutView).size_info().east
+        celment_height = self.celment_block.get_default_view(i3.LayoutView).size_info().north
+        ocdc_len = self.ocdc_block.get_default_view(i3.LayoutView).size_info().east
+        ocdc_height = self.ocdc_block.get_default_view(i3.LayoutView).size_info().north - \
+                      self.ocdc_block.get_default_view(i3.LayoutView).size_info().south
+        ocdc_spacing = self.spacing_y + ocdc_height
+        ocdc_displacement = -((self.dim - 1) / 2.0 * ocdc_spacing)
+        ocdc_x = celment_height + self.spacing_x
+        gr_out_x = 2 * celment_height + 2 * self.spacing_x + ocdc_len
+        wg_spacing = 50
         for i in range(self.dim):
             conn.append(("gr_in_{}:wg".format(i), "cel_in:in{}".format(i + 1),
                          manhattan, {"bend_radius": self.bend_radius}))
+            c = partial(manhattan, control_points=[(celment_height - cel_spy/2 - i * cel_spy, celment_len / 2 + i * wg_spacing),
+                                                   (ocdc_x - (self.dim - i) * wg_spacing, celment_len / 2 + i * wg_spacing),
+                                                   (ocdc_x - (self.dim - i) * wg_spacing, ocdc_displacement + i * ocdc_spacing)])
             conn.append(("cel_in:out{}".format(i + 1), "ocdc_{}:in".format(i),
+                         c, {"bend_radius": self.bend_radius}))
+            c = partial(manhattan, control_points=[(ocdc_x + ocdc_len + (i + 1) * wg_spacing, ocdc_displacement + i * ocdc_spacing),
+                                                   (ocdc_x + ocdc_len + (i + 1) * wg_spacing, -celment_len / 2 - (self.dim - i) * wg_spacing),
+                                                   (gr_out_x - i * cel_spy, -celment_len / 2 - (self.dim - i) * wg_spacing)])
+            conn.append(("ocdc_{}:out".format(i), "cel_out:in{}".format(self.dim - i),
+                         c, {"bend_radius": self.bend_radius}))
+            conn.append(("cel_out:out{}".format(self.dim - i), "gr_out_{}:wg".format(i),
                          manhattan, {"bend_radius": self.bend_radius}))
-            conn.append(("ocdc_{}:out".format(i), "cel_out:in{}".format(i + 1),
-                         manhattan, {"bend_radius": self.bend_radius}))
-            conn.append(("cel_out:out{}".format(i + 1), "gr_out_{}:wg".format(self.dim - i - 1),
-                         manhattan, {"bend_radius": self.bend_radius}))
-        return []
-"""
+        return conn
