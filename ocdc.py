@@ -11,7 +11,7 @@ class OCDC(CircuitCell):
     splitter_tree = i3.ChildCellProperty(doc="SplitterTree used")
     levels = i3.IntProperty(default=3, doc="Number of levels")
     spacing_x = i3.PositiveNumberProperty(default=220.0, doc="Horizontal spacing between the levels")
-    spacing_y = i3.PositiveNumberProperty(default=80.0, doc="Vertical spacing between the MMIs in the last level")
+    spacing_y = i3.PositiveNumberProperty(default=150.0, doc="Vertical spacing between the MMIs in the last level")
     bend_radius = i3.PositiveNumberProperty(default=5.0, doc="Bend radius of the connecting waveguides")
 
     # MZI options

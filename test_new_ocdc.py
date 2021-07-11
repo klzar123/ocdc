@@ -40,7 +40,7 @@ mzi=MZIWithCells(name="my_mzi_cells_1",
     arm1_contents_port_names=["in", "out"],
     arm2_contents=ht,
     arm2_contents_port_names=["in", "out"],)
-mzi.Layout().visualize(annotate=True)
+mzi.Layout().visualize(annotate=False)
 #dut_lv=mzi.get_default_view(i3.LayoutView)
 #port_list_out_sorted = [p.name for p in dut_lv.ports.y_sorted()]
 #print(port_list_out_sorted)
