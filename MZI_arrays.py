@@ -26,8 +26,8 @@ mzi_lo.visualize(annotate=True)
 
 spacing_x = 125.
 spacing_y = 150.
-n_column = 5
-n_row = 3
+n_column = 7
+n_row = 4
 cells = {}
 links = []
 trans = {}

@@ -8,6 +8,8 @@ from ipkiss3 import all as i3
 from reck import Reck
 from celment import Celment
 from PhMZI import PhMZI
+from circuit.utils import get_port_from_interface
+import re
 
 
 #rk = Reck(levels=5)
@@ -18,3 +20,12 @@ from PhMZI import PhMZI
 
 cel = Celment(dim=3)
 cel.Layout().visualize(annotate=False)
+#ports = cel.get_electric_ports()
+ports = dict()
+for port in cel.Layout().ports:
+    if not re.search("in|out", port.name):
+        ports[port.name] = port.position.x
+o_ports = [k for k, v in sorted(ports.items(), key=lambda item: item[1])]
+for name in o_ports:
+    print(name)
+

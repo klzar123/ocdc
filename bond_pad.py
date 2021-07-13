@@ -9,7 +9,7 @@ class BondPad(i3.PCell):
     Bondpad to be used here
     """
     class Layout(i3.LayoutView):
-        size = i3.Size2Property(default=(50.0, 50.0), doc="Size of the bondpad")
+        size = i3.Size2Property(default=(60.0,80.0), doc="Size of the bondpad")
         metal_layer = i3.LayerProperty(default=i3.TECH.PPLAYER.M1.DRW, doc="Metal used for the bondpad")
 
         def _generate_elements(self, elems):

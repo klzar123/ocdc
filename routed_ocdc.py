@@ -5,8 +5,7 @@ from CSiP180Al import all as pdk
 from ocdc import OCDC
 from bond_pad import BondPad
 import re
-#from ipkiss.technology import get_technology
-#TECH = get_technology()
+
 
 def take_mzi_num(p):
     return int(re.findall(r"\d+", p)[1])
@@ -36,6 +35,7 @@ class RoutedOCDC(CircuitCell):
     electrical_links = i3.LockedProperty(doc="The electrical connectors between the heaters and the contact pads")
     bond_pads_spacing = i3.PositiveNumberProperty(default=50.0, doc="The horizontal distance between the contact pads")
     wire_spacing = i3.PositiveNumberProperty(default=10.0, doc="The spacing between the electrical wires")
+    layout_direction = i3.IntProperty(default=0, doc=".... ")
 
     def _default_dut(self):
         return OCDC()
@@ -116,6 +116,7 @@ class RoutedOCDC(CircuitCell):
         bp_cnt_d = 0
         bp_spacing = self.bond_pads_spacing
         height = - self.dut.get_default_view(i3.LayoutView).size_info().north / 2
+        width = self.dut.get_default_view(i3.LayoutView).size_info().east
 
         # Place the dut (splitter tree) at the origin
         specs.append(i3.Place("dut", (0, 0)))
@@ -129,41 +130,80 @@ class RoutedOCDC(CircuitCell):
         for el_link in self.electrical_links:
             bp_name = el_link[1].split(":")[0]
             row_num = int(re.findall(r"\d+", bp_name)[0])
-            if row_num >= self.dut.get_n_rows() / 2:
+            if row_num >= self.dut.get_n_rows() / 2 or self.dut.get_levels() < 5:
                 if re.search("elec1", bp_name):
-                    specs.append(
-                        i3.Place(
-                            bp_name,
-                            (bp_cnt_u * bp_spacing,
-                             height + bp_spacing + len(self.electrical_links) * self.wire_spacing)
+                    if self.layout_direction == 0:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (bp_cnt_u * bp_spacing - 200,
+                                height + bp_spacing + len(self.electrical_links) * self.wire_spacing)
+                            )
                         )
-                    )
+                    else:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (-300,
+                                 550 + height + bp_spacing + len(self.electrical_links) * self.wire_spacing - bp_cnt_u * bp_spacing)
+                            )
+                        )
                 else:
-                    specs.append(
-                        i3.Place(
-                            bp_name,
-                            (bp_cnt_u * bp_spacing - 3.5 * bp_spacing / 2,
-                             height + bp_spacing + len(self.electrical_links) * self.wire_spacing + 127)
+                    if self.layout_direction == 0:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (bp_cnt_u * bp_spacing - 3.5 * bp_spacing / 2 - 200,
+                                height + bp_spacing + len(self.electrical_links) * self.wire_spacing + 127)
+                            )
                         )
-                    )
+                    else:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (-400,
+                                550 + height + bp_spacing + len(
+                                     self.electrical_links) * self.wire_spacing - bp_cnt_u * bp_spacing + 0.5 * bp_spacing)
+                            )
+                        )
                 bp_cnt_u = bp_cnt_u + 1
             else:
                 if re.search("elec1", bp_name):
-                    specs.append(
-                        i3.Place(
-                            bp_name,
-                            (bp_cnt_d * bp_spacing,
-                             -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing))
+                    if self.layout_direction == 0:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (bp_cnt_d * bp_spacing - 200,
+                                -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing))
+                            )
                         )
-                    )
+                    else:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (width + 700 ,
+                                 700 + height + bp_spacing + len(
+                                     self.electrical_links) * self.wire_spacing - bp_cnt_d * bp_spacing )
+                            )
+                        )
                 else:
-                    specs.append(
-                        i3.Place(
-                            bp_name,
-                            (bp_cnt_d * bp_spacing - 3.5 * bp_spacing / 2,
-                             -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing + 127))
+                    if self.layout_direction == 0:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (bp_cnt_d * bp_spacing - 3.5 * bp_spacing / 2 - 200,
+                                -(height + bp_spacing + len(self.electrical_links) * self.wire_spacing + 127))
+                            )
                         )
-                    )
+                    else:
+                        specs.append(
+                            i3.Place(
+                                bp_name,
+                                (width + 800,
+                                 700 + height + bp_spacing + len(
+                                     self.electrical_links) * self.wire_spacing - bp_cnt_d * bp_spacing + 0.5 * bp_spacing)
+                            )
+                        )
                 bp_cnt_d = bp_cnt_d + 1
         return specs
 
@@ -245,7 +285,7 @@ class RoutedOCDC(CircuitCell):
                         (ep.x, last_ep.y - self.bond_pads_spacing + tmp_cnt * d + dy),
                         ep
                     ])
-                elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1.DRW, line_width=4.0)
+                #elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1.DRW, line_width=4.0)
 
             # down links
             ht_num = 0
@@ -305,8 +345,8 @@ class RoutedOCDC(CircuitCell):
                         ep
                     ])
                 # print(bp_name, mzi_num, cnt_x, sp.x - (n_links / 2 - cnt_x) * d)
-                #elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
-                elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1.DRW, line_width=4.0)
+                # elems += i3.Path(shape=shape, layer=i3.Layer(2), line_width=4.0)
+                # elems += i3.Path(shape=shape, layer=i3.TECH.PPLAYER.M1.DRW, line_width=4.0)
             return elems
 
     class Netlist(CircuitCell.Netlist):

@@ -1,9 +1,11 @@
 from CSiP180Al import all as pdk
 from ipkiss3 import all as i3
-from circuit.all import CircuitCell, bezier_sbend
+from circuit.all import CircuitCell, manhattan
 from picazzo3.filters.mzi import MZIWithCells
 from heatedwaveguide import HeatedWaveguide
 from picazzo3.wg.dircoup import BendDirectionalCoupler
+import re
+from functools import partial
 
 class PhMZI(CircuitCell):
 
@@ -25,12 +27,28 @@ class PhMZI(CircuitCell):
         return child_cells
 
     def _default_connectors(self):
-        return [("mzi:combiner_out1", "ht:in", bezier_sbend, {"bend_radius": 5.0})]
+        mzi_len = self.child_cells["mzi"].get_default_view(i3.LayoutView).size_info().east
+        arm2_elec1_pos = None
+        for port in self.child_cells["mzi"].Layout().ports:
+            if re.search("arm2_elec1", port.name):
+                arm2_elec1_pos = port.position
+        c = partial(manhattan, control_points=[(mzi_len + 20, 1.5),
+                                               (mzi_len + 20, 2 * arm2_elec1_pos.y),
+                                               (arm2_elec1_pos.x - 30, 2 * arm2_elec1_pos.y),
+                                               (arm2_elec1_pos.x - 30, arm2_elec1_pos.y + 2 * arm2_elec1_pos.y)])
+        return [("mzi:combiner_out1", "ht:in", c, {"bend_radius": 5.0})]
 
     def _default_place_specs(self):
-        return [i3.Place("mzi", (0, 0)), i3.Place("ht",
-                                                  (self.child_cells["mzi"].get_default_view(i3.LayoutView).size_info().east + 100,
-                                                   10))]
+        ht_pos_x = 0
+        ht_pos_y = 0
+        arm2_elec1_pos = None
+        for port in self.child_cells["mzi"].Layout().ports:
+            if re.search("arm2_elec1", port.name):
+                arm2_elec1_pos = port.position
+        ht_pos_x = arm2_elec1_pos.x - 25
+        ht_pos_y = arm2_elec1_pos.y + 2 * arm2_elec1_pos.y
+        return [i3.Place("mzi", (0, 0)),
+                i3.Place("ht",(ht_pos_x, ht_pos_y))]
 
     def _default_external_port_names(self):
         return {"mzi:splitter_in1":"in1",

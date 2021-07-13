@@ -30,8 +30,9 @@ class HeatedWaveguide(i3.Waveguide):
     _name_prefix = "HEATED_WAVEGUIDE"
     heater_width = i3.PositiveNumberProperty(default=0.6, doc="Width of the heater")
     heater_offset = i3.PositiveNumberProperty(default=1.0, doc="Offset of the heaters from the waveguide center")
+    heater_length = i3.PositiveNumberProperty(default=200.0, doc="Length of the heater")
     m1_width = i3.PositiveNumberProperty(default=1.0, doc="Width of the M1 contact")
-    m1_length = i3.PositiveNumberProperty(default=3.0, doc="Length of the M1 contacst")
+    m1_length = i3.PositiveNumberProperty(default=3.0, doc="Length of the M1 contact")
 
     def _default_trace_template(self):
         return pdk.SWG450_CTE()
@@ -39,7 +40,9 @@ class HeatedWaveguide(i3.Waveguide):
     class Layout(i3.Waveguide.Layout):
 
         def _default_shape(self):
-            return i3.Shape([(0.0, 0.0), (3 * self.m1_length, 0.0)])
+            #return i3.Shape([(0.0, 0.0), (30 * self.m1_length, 0.0)])
+
+            return i3.Shape([(0.0, 0.0), (self.heater_length, 0.0)])
 
         def _generate_elements(self, elems):
             elems = super(HeatedWaveguide.Layout, self)._generate_elements(elems)
@@ -118,5 +121,8 @@ if __name__=="__main__":
                          heater_offset=1.0,
                          m1_width=1.0,
                          m1_length=3.0)
-    ht_lv = ht.Layout(shape=[(0.0, 0.0), (10.0, 0.0)])
-    ht_lv.visualize(annotate=True)
+    ht_ly = ht.Layout
+    ht.Layout.visualize(annotate=False)
+
+    #ht_lv = ht.Layout(shape=[(0.0, 0.0), (40.0, 0.0)])
+    #ht_lv.visualize(annotate=True)

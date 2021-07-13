@@ -15,7 +15,7 @@ from routed_ocdc import RoutedOCDC
 #print(port_list_out_sorted)
 
 
-ocdc = OCDC(levels=4, mzi_nums=2)
+ocdc = OCDC(levels=3, mzi_nums=2,plus_in=True)
 ocdc.Layout().visualize(annotate=False)
 #ocdc_lv = ocdc.get_default_view(i3.LayoutView)
 #ocdc_port_list = [p.name for p in ocdc_lv.ports if re.search("elec", p.name)]
@@ -25,6 +25,7 @@ ocdc.Layout().visualize(annotate=False)
 #r_ocdc = RoutedOCDC(dut=ocdc)
 #r_ocdc.Layout().visualize(annotate=False)
 #r_ocdc.Layout().write_gdsii('OCDC.gds')
+
 """
 split = pdk.M2X2_TE_1550()
 #split.Layout().visualize(annotate=True)
@@ -40,7 +41,9 @@ mzi=MZIWithCells(name="my_mzi_cells_1",
     arm1_contents_port_names=["in", "out"],
     arm2_contents=ht,
     arm2_contents_port_names=["in", "out"],)
-mzi.Layout().visualize(annotate=False)
+for port in mzi.Layout().ports:
+    print(port.name, port.position)
+mzi.Layout().visualize(annotate=True)
 #dut_lv=mzi.get_default_view(i3.LayoutView)
 #port_list_out_sorted = [p.name for p in dut_lv.ports.y_sorted()]
 #print(port_list_out_sorted)

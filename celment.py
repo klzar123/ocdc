@@ -3,6 +3,8 @@ from ipcore.exceptions.exc import PropertyValidationError
 from ipkiss3 import all as i3
 from circuit.all import CircuitCell, manhattan
 from PhMZI import PhMZI
+from circuit.utils import get_port_from_interface
+
 
 class Celment(CircuitCell):
     _name_prefix = ("Celment")
@@ -11,7 +13,7 @@ class Celment(CircuitCell):
     spacing_x = i3.PositiveNumberProperty(doc="spacing between the unit blocks in x direction")
     spacing_y = i3.PositiveNumberProperty(doc="spacing between the unit blocks in y direction")
     bend_radius = i3.PositiveNumberProperty(default=10.0, doc="Bend radius of the connecting waveguides")
-    f_grating_io = i3.BoolProperty(default=False,doc="if add the grating input and output, value = True")
+    f_grating_io = i3.BoolProperty(default=False, doc="if add the grating input and output, value = True")
 
     _input_list = []
     _output_list = []
@@ -25,11 +27,13 @@ class Celment(CircuitCell):
         return PhMZI()
 
     def _default_spacing_x(self):
-        return 1.7 * self.unit_block.get_default_view(i3.LayoutView).size_info().east
+        return 2 * self.unit_block.get_default_view(i3.LayoutView).size_info().east + 40
 
     def _default_spacing_y(self):
-        return 2 * (self.unit_block.get_default_view(i3.LayoutView).size_info().north - \
-                    self.unit_block.get_default_view(i3.LayoutView).size_info().south)
+        return 1.5 * (self.unit_block.get_default_view(i3.LayoutView).size_info().north -
+                      self.unit_block.get_default_view(i3.LayoutView).size_info().south) - 50
+
+
 
     def get_spacing_y(self):
         return self.spacing_y
@@ -68,7 +72,8 @@ class Celment(CircuitCell):
         if self.f_grating_io:
             for i in range(self.dim):
                 place_specs.append(i3.Place("gr_in_{}".format(i), (0, spacing_y * i)))
-                place_specs.append(i3.Place("gr_out_{}".format(i), (self.dim / 2 * spacing_x + gr_len + 1200, spacing_y * i)))
+                place_specs.append(
+                    i3.Place("gr_out_{}".format(i), (self.dim / 2 * spacing_x + gr_len + 1200, spacing_y * i)))
                 place_specs.append(i3.FlipH("gr_out_{}".format(i)))
 
         # place the unit blocks
@@ -80,7 +85,7 @@ class Celment(CircuitCell):
                 extra_length = 0 if i % 2 == 0 else spacing_x / 2
             else:
                 n_units = (self.dim + 1) / 2 if (i + 1) % 2 == 0 else (self.dim - 1) / 2
-                extra_length = (spacing_x - 400) / 2 if i % 2 == 0 else 0
+                extra_length = spacing_x / 2 if i % 2 == 0 else 0
             for j in range(n_units):
                 place_specs.append(i3.Place("block_{}_{}".format(i, j),
                                             (j * spacing_x + 600 + extra_length - offset,
@@ -96,8 +101,10 @@ class Celment(CircuitCell):
                 conn.append(("gr_in_0:wg", "block_0_0:in2", manhattan, {"bend_radius": self.bend_radius}))
                 offset = 1
             for i in range(offset, self.dim, 2):
-                conn.append(("gr_in_{}:wg".format(i), "block_{}_0:in2".format(i), manhattan, {"bend_radius": self.bend_radius}))
-                conn.append(("gr_in_{}:wg".format(i + 1), "block_{}_0:in1".format(i), manhattan, {"bend_radius": self.bend_radius}))
+                conn.append(
+                    ("gr_in_{}:wg".format(i), "block_{}_0:in2".format(i), manhattan, {"bend_radius": self.bend_radius}))
+                conn.append(("gr_in_{}:wg".format(i + 1), "block_{}_0:in1".format(i), manhattan,
+                             {"bend_radius": self.bend_radius}))
         else:
             if self.dim % 2 != 0:
                 self._input_list.append("block_0_0:in2")
@@ -105,7 +112,6 @@ class Celment(CircuitCell):
             for i in range(offset, self.dim, 2):
                 self._input_list.append("block_{}_0:in2".format(i))
                 self._input_list.append("block_{}_0:in1".format(i))
-
 
         for i in range(self.dim - 1):
             n_units = 0
@@ -117,24 +123,25 @@ class Celment(CircuitCell):
                 offset = (i + 1) % 2
             for j in range(n_units - 1):
                 if i + 1 > self.dim - 2:
-                    #conn.append(("block_{}_{}:out1".format(i, j), "block_{}_{}:in1".format(i, j + 1), manhattan,
+                    # conn.append(("block_{}_{}:out1".format(i, j), "block_{}_{}:in1".format(i, j + 1), manhattan,
                     #             {"bend_radius": self.bend_radius}))
                     conn.append(("block_{}_{}:out1".format(i, j), "block_{}_{}:in1".format(i, j + 1)))
                 else:
                     conn.append((
-                                "block_{}_{}:out1".format(i, j), "block_{}_{}:in2".format(i + 1, j + offset), manhattan,
-                                {"bend_radius": self.bend_radius}))
+                        "block_{}_{}:out1".format(i, j), "block_{}_{}:in2".format(i + 1, j + offset), manhattan,
+                        {"bend_radius": self.bend_radius}))
                 if i - 1 < 0:
-                    #conn.append(("block_{}_{}:out2".format(i, j), "block_{}_{}:in2".format(i, j + 1), manhattan,
+                    # conn.append(("block_{}_{}:out2".format(i, j), "block_{}_{}:in2".format(i, j + 1), manhattan,
                     #             {"bend_radius": self.bend_radius}))
                     conn.append(("block_{}_{}:out2".format(i, j), "block_{}_{}:in2".format(i, j + 1)))
                 else:
-                    conn.append(("block_{}_{}:out2".format(i, j), "block_{}_{}:in1".format(i - 1, j + offset), manhattan,
-                                 {"bend_radius": self.bend_radius}))
+                    conn.append(
+                        ("block_{}_{}:out2".format(i, j), "block_{}_{}:in1".format(i - 1, j + offset), manhattan,
+                         {"bend_radius": self.bend_radius}))
             # connect the output
             if self.f_grating_io:
                 conn.append(("block_0_{}:out2".format((self.dim - self.dim % 2) / 2 - 1), "gr_out_0:wg", manhattan,
-                                 {"bend_radius": self.bend_radius}))
+                             {"bend_radius": self.bend_radius}))
             else:
                 self._output_list.append("block_0_{}:out2".format((self.dim - self.dim % 2) / 2 - 1))
             conn.append(("block_0_{}:out1".format((self.dim - self.dim % 2) / 2 - 1),
@@ -145,20 +152,24 @@ class Celment(CircuitCell):
                 if i % 2 == 1:
                     if self.f_grating_io:
                         conn.append(("block_{}_{}:out2".format(i, j), "gr_out_{}:wg".format(i), manhattan,
-                                    {"bend_radius": self.bend_radius}))
-                        conn.append(("block_{}_{}:out1".format(i, j), "gr_out_{}:wg".format(i+1), manhattan,
+                                     {"bend_radius": self.bend_radius}))
+                        conn.append(("block_{}_{}:out1".format(i, j), "gr_out_{}:wg".format(i + 1), manhattan,
                                      {"bend_radius": self.bend_radius}))
                     else:
                         self._output_list.append("block_{}_{}:out2".format(i, j))
                         self._output_list.append("block_{}_{}:out1".format(i, j))
                     if i + 1 == self.dim - 2:
                         if self.f_grating_io:
-                            conn.append(("block_{}_{}:out1".format(i + 1, (self.dim - self.dim % 2) / 2 + self.dim % 2 * ((i + 1) % 2) - 1),
-                                         "gr_out_{}:wg".format(i+2), manhattan,
+                            conn.append(("block_{}_{}:out1".format(i + 1,
+                                                                   (self.dim - self.dim % 2) / 2 + self.dim % 2 * (
+                                                                               (i + 1) % 2) - 1),
+                                         "gr_out_{}:wg".format(i + 2), manhattan,
                                          {"bend_radius": self.bend_radius}))
                         else:
-                            self._output_list.append("block_{}_{}:out1".format(i + 1, (self.dim - self.dim % 2) / 2 + self.dim % 2 * ((i + 1) % 2) - 1))
-                        conn.append(("block_{}_{}:out2".format(i + 1, (self.dim - self.dim % 2) / 2 + self.dim % 2 * ((i + 1) % 2) - 1),
+                            self._output_list.append("block_{}_{}:out1".format(i + 1, (
+                                        self.dim - self.dim % 2) / 2 + self.dim % 2 * ((i + 1) % 2) - 1))
+                        conn.append(("block_{}_{}:out2".format(i + 1, (self.dim - self.dim % 2) / 2 + self.dim % 2 * (
+                                    (i + 1) % 2) - 1),
                                      "block_{}_{}:in1".format(i, j), manhattan,
                                      {"bend_radius": self.bend_radius}))
                 else:
@@ -169,7 +180,7 @@ class Celment(CircuitCell):
                             {"bend_radius": self.bend_radius}))
                         conn.append(
                             ("block_{}_{}:out2".format(i, j), "block_{}_{}:in1".format(i - 1, j + offset), manhattan,
-                            {"bend_radius": self.bend_radius}))
+                             {"bend_radius": self.bend_radius}))
         return conn
 
     def _default_external_port_names(self):
@@ -185,4 +196,11 @@ class Celment(CircuitCell):
 
     def _default_propagated_electrical_ports(self):
         pep = []
+        for i in range(self.dim):
+            n_units = (self.dim - self.dim % 2) / 2 + self.dim % 2 * (i % 2)
+            for j in range(n_units):
+                pep.append("block_{}_{}_mzi_arm2_elec1".format(i, j))
+                pep.append("block_{}_{}_mzi_arm2_elec2".format(i, j))
+                pep.append("block_{}_{}_ht_elec1".format(i, j))
+                pep.append("block_{}_{}_ht_elec2".format(i, j))
         return pep
