@@ -20,6 +20,8 @@ class PhMZI(CircuitCell):
         child_cells["mzi"] = MZIWithCells(name="my_mzi_cells_1",
                    splitter=split,
                    combiner=split,
+                   arm1_contents=ht,
+                   arm1_contents_port_names=["in", "out"],
                    arm2_contents=ht,
                    arm2_contents_port_names=["in", "out"])
 
@@ -55,12 +57,14 @@ class PhMZI(CircuitCell):
                 "mzi:splitter_in2":"in2",
                 "ht:out":"out1",
                 "mzi:combiner_out2":"out2",
-                "mzi:arm2_elec1":"mzi_arm2_elec1",
-                "mzi:arm2_elec2":"mzi_arm2_elec2",
+                "mzi:arm1_elec1":"mzi_arm1_elec1",
+                "mzi:arm1_elec2":"mzi_arm1_elec2",
+                "mzi:arm2_elec1": "mzi_arm2_elec1",
+                "mzi:arm2_elec2": "mzi_arm2_elec2",
                 "ht:elec1":"ht_elec1",
                 "ht:elec2":"ht_elec2"}
 
     def _default_propagated_electrical_ports(self):
-        return ["mzi_arm2_elec1", "mzi_arm2_elec2", "ht_elec1", "ht_elec2"]
+        return ["mzi_arm1_elec1", "mzi_arm1_elec2", "mzi_arm2_elec1", "mzi_arm2_elec2", "ht_elec1", "ht_elec2"]
 
 

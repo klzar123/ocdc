@@ -27,7 +27,7 @@ class RoutedCelOCDCCel(CircuitCell):
     def _default_child_cells(self):
         child_cells = dict()
         child_cells["dut"] = self.dut
-        npads = 41 + 46 + 18
+        npads = 96
         for i in range(npads):
             child_cells["bp_ht{}_elec1".format(i)] = BondPad()
             child_cells["bp_ht{}_elec2".format(i)] = BondPad()
@@ -35,34 +35,40 @@ class RoutedCelOCDCCel(CircuitCell):
         return child_cells
 
     def _default_place_specs(self):
-        place_specs = [i3.Place("dut", (0, -300))]
+        west = self.dut.get_default_view(i3.LayoutView).size_info().west
+        dut_length = self.dut.get_default_view(i3.LayoutView).size_info().east - west
+        print("length: ", dut_length)
+        south = self.dut.get_default_view(i3.LayoutView).size_info().south
+        dut_height = (self.dut.get_default_view(i3.LayoutView).size_info().north - south)
+        print("height: ", dut_height)
+        place_specs = [i3.Place("dut", (-west, -dut_height / 2 - south))]
         bp_xlen = 60
         bp_ylen = 80
         displacement = self.dut.get_default_view(i3.LayoutView).size_info().west + 300
         cnt = 0
         # up pads
-        while cnt < 35:
+        while cnt < 36:
             place_specs.append(i3.Place("bp_ht{}_elec1".format(cnt),
-                                        (displacement + 550 + bp_xlen / 2 + cnt * self.bond_pads_spacing_x,
+                                        (100 + bp_xlen / 2 + cnt * self.bond_pads_spacing_x,
                                          2500 - (100 + bp_ylen / 2))))
             place_specs.append(i3.Place("bp_ht{}_elec2".format(cnt),
-                                        (displacement + 550 + bp_xlen / 2 + (cnt + 0.5) * self.bond_pads_spacing_x,
+                                        (100 + bp_xlen / 2 + (cnt + 0.5) * self.bond_pads_spacing_x,
                                          2500 - (100 + bp_ylen / 2 + self.bond_pads_spacing_y))))
             cnt = cnt + 1
         # down pads
-        while cnt < 75:
+        while cnt < 72:
             place_specs.append(i3.Place("bp_ht{}_elec1".format(cnt),
-                                        (displacement + 100 + bp_xlen / 2 + (cnt - 35) * self.bond_pads_spacing_x,
+                                        (100 + bp_xlen / 2 + (cnt - 35) * self.bond_pads_spacing_x,
                                          -2500 + (100 + bp_ylen / 2))))
             place_specs.append(i3.Place("bp_ht{}_elec2".format(cnt),
-                                        (displacement + 100 + bp_xlen / 2 + (cnt - 35 + 0.5) * self.bond_pads_spacing_x,
+                                        (100 + bp_xlen / 2 + (cnt - 35 + 0.5) * self.bond_pads_spacing_x,
                                          - 2500 + (100 + bp_ylen / 2 + self.bond_pads_spacing_y))))
             cnt = cnt + 1
 
-        bp_x = self.dut.get_default_view(i3.LayoutView).size_info().east + 500
-        displacement = 1500
+        bp_x = 4800
+        displacement = 1200
         # right pads
-        while cnt < 105:
+        while cnt < 96:
             place_specs.append(i3.Place("bp_ht{}_elec1".format(cnt),
                                         (bp_x, displacement - (cnt - 75) * self.bond_pads_spacing_x),
                                         angle=90))

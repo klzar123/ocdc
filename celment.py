@@ -199,6 +199,8 @@ class Celment(CircuitCell):
         for i in range(self.dim):
             n_units = (self.dim - self.dim % 2) / 2 + self.dim % 2 * (i % 2)
             for j in range(n_units):
+                pep.append("block_{}_{}_mzi_arm1_elec1".format(i, j))
+                pep.append("block_{}_{}_mzi_arm1_elec2".format(i, j))
                 pep.append("block_{}_{}_mzi_arm2_elec1".format(i, j))
                 pep.append("block_{}_{}_mzi_arm2_elec2".format(i, j))
                 pep.append("block_{}_{}_ht_elec1".format(i, j))

@@ -19,7 +19,7 @@ import re
 #phmzi.Layout().visualize(annotate=False)
 
 cel = Celment(dim=3)
-cel.Layout().visualize(annotate=False)
+cel.Layout().visualize(annotate=True)
 #ports = cel.get_electric_ports()
 ports = dict()
 for port in cel.Layout().ports:

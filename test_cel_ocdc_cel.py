@@ -1,12 +1,12 @@
 from cel_ocdc_cel import CelOCDCCel
-#from routed_cel_ocdc_cel import RoutedCelOCDCCel
+from routed_cel_ocdc_cel import RoutedCelOCDCCel
 
 
-coc = CelOCDCCel()
-coc.Layout().visualize(annotate=True)
+#coc = CelOCDCCel()
+#coc.Layout().visualize(annotate=False)
 #coc.Layout().write_gdsii('CelOCDCCel.gds')
 
 
-#rcoc = RoutedCelOCDCCel()
+rcoc = RoutedCelOCDCCel()
 #rcoc.Layout().visualize()
-#rcoc.Layout().write_gdsii('CelOCDCCel.gds')
+rcoc.Layout().write_gdsii('CelOCDCCel.gds')

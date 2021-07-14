@@ -8,7 +8,7 @@ class MZIString(CircuitCell):
     _name_prefix = "MZI_String"
     mzi = i3.ChildCellProperty(doc="MZI")
     mzi_nums = i3.IntProperty(default=2, doc="Number of MZIs")
-    spacing = i3.PositiveNumberProperty(default=800, doc="spacing between MZIs")
+    spacing = i3.PositiveNumberProperty(default=500, doc="spacing between MZIs")
     # maybe useless, how to connect directly?
     bend_radius = i3.PositiveNumberProperty(default=30.0, doc="Bend radius of the connecting waveguides")
 

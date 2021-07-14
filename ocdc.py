@@ -91,23 +91,23 @@ class OCDC(CircuitCell):
         c = partial(manhattan, control_points =[(left_x_coord, y_coord)])
         conn.append(("splitter:out_{}".format(max_port_idx), "ht_wg_{}:in".format(max_port_idx - 1),
                      c, {"bend_radius": self.bend_radius}))
-        c = partial(manhattan, control_points=[(right_x_coord + 110, y_coord)])
+        #c = partial(manhattan, control_points=[(right_x_coord, y_coord)])
         conn.append(("ht_wg_{}:out".format(max_port_idx - 1), "combiner:out_{}".format(max_port_idx),
-                     c, {"bend_radius": self.bend_radius}))
+                     manhattan, {"bend_radius": self.bend_radius}))
         # connect the splitter - mzi_string - combinner
         for i in range(mzi_string_nums):
             if i < 2:
                 continue
             # splitter - mzi_string
             y_coord = y_0 + (i + 0.5) * self.spacing_y / 2
-            c = partial(manhattan, control_points=[(left_x_coord, y_coord)])
+            #c = partial(manhattan, control_points=[(left_x_coord, y_coord)])
             conn.append(("splitter:out_{}".format(i + 1), "mzis_{}:in".format(i),
                          manhattan, {"bend_radius": self.bend_radius}))
             # mzi_string - heated_waveguide
             conn.append(("mzis_{}:out".format(i), "ht_wg_{}:in".format(i),
                          bezier_sbend, {"bend_radius": self.bend_radius}))
             # heated_waveguide - combiner
-            c = partial(manhattan, control_points=[(right_x_coord, y_coord)])
+            #c = partial(manhattan, control_points=[(right_x_coord, y_coord)])
             conn.append(("ht_wg_{}:out".format(i), "combiner:out_{}".format(i + 1),
                          manhattan, {"bend_radius": self.bend_radius}))
         return conn
@@ -118,13 +118,13 @@ class OCDC(CircuitCell):
         mzi_string_len = self.mzi_nums * self.mzi_spacing
         splitter_len = self.spacing_x * self.levels
         #place the combiner
-        place_specs.append(i3.Place("combiner", (splitter_len * 2 + mzi_string_len + self.spacing_x, 0)))
+        place_specs.append(i3.Place("combiner", (splitter_len * 2 + mzi_string_len + self.spacing_x - 200, 0)))
         place_specs.append(i3.FlipH("combiner"))
         # place the mzi_string
         mzi_string_nums = 2 ** self.levels - 1
         y_0 = - 0.5 * self.spacing_y * 2 ** self.levels / 2
         x_coord = splitter_len - 150
-        ht_x_coord = splitter_len + mzi_string_len - 50
+        ht_x_coord = splitter_len + mzi_string_len - 200
         for i in range(mzi_string_nums):
             if i < 2:
                 continue
